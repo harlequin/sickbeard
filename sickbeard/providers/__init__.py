@@ -15,6 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Sick Beard.  If not, see <http://www.gnu.org/licenses/>.
+import imp
 
 __all__ = ['ezrss',
            'tvtorrents',
@@ -31,7 +32,7 @@ from os import sys
 
 def sortedProviderList():
 
-    initialList = sickbeard.providerList + sickbeard.newznabProviderList
+    initialList = sickbeard.providerList + sickbeard.newznabProviderList + sickbeard.providerPluginList
     providerDict = dict(zip([x.getID() for x in initialList], initialList))
 
     newList = []
@@ -52,6 +53,24 @@ def makeProviderList():
 
     return [x.provider for x in [getProviderModule(y) for y in __all__] if x]
 
+def makePluginProviderList():
+    import pkgutil    
+    from sickbeard import providers
+    
+    "Load plugins from a specified package."
+    ppath = sickbeard.providers.__path__    
+    #'sickbeard.providers.'
+    liste = list(pkgutil.iter_modules(ppath))
+    
+    names = []
+    for l in liste:
+        if not l[1] in __all__ and getDynamicProviderModule(l[1]) == None:
+            __import__('sickbeard.providers.'+l[1])
+            names.append( l[1] )
+        
+    #return [x.provider for x in [ sys.modules[l[1]] for l in liste ]]    
+    return [x.provider for x in [ sys.modules['sickbeard.providers.'+l] for l in names ] if x]
+    
 def getNewznabProviderList(data):
 
     defaultList = [makeNewznabProvider(x) for x in getDefaultNewznabProviders().split('!!!')]
@@ -103,6 +122,14 @@ def getProviderModule(name):
     name = name.lower()
     prefix = "sickbeard.providers."
     if name in __all__ and prefix+name in sys.modules:
+        return sys.modules[prefix+name]
+    else:
+        return None
+
+def getDynamicProviderModule(name):
+    name = name.lower()
+    prefix = "sickbeard.providers."
+    if prefix+name in sys.modules:
         return sys.modules[prefix+name]
     else:
         return None

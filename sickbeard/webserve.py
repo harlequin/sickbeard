@@ -1091,6 +1091,14 @@ class ConfigProviders:
             else:
                 logger.log(u"don't know what "+curProvider+" is, skipping")
 
+        for i in range(len(sickbeard.providerPluginList)):
+            if sickbeard.providerPluginList[i].name.lower() == curProvider:                
+                sickbeard.providerPluginList[i].enabled = curEnabled
+
+
+        
+        
+
         sickbeard.TVTORRENTS_DIGEST = tvtorrents_digest.strip()
         sickbeard.TVTORRENTS_HASH = tvtorrents_hash.strip()
 
