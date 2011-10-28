@@ -140,7 +140,7 @@ class ProperFinder():
             if curProper.tvdbid == -1:
                 continue
             
-            if not show_name_helpers.filterBadReleases(curProper.name):
+            if not show_name_helpers.filterBadReleases(curProper.name, curProper.language):
                 logger.log(u"Proper "+curProper.name+" isn't a valid scene release that we want, igoring it", logger.DEBUG)
                 continue
 

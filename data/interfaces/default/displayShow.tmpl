@@ -12,6 +12,74 @@
 <script type="text/javascript" src="$sbRoot/js/jquery.bookmarkscroll.js"></script>
 
 
+
+
+<script type="text/javascript" charset="utf-8">
+<!--
+
+function set_parameter(id) {	
+	\$.get("$sbRoot/home/addShows/changeLanguageForEpisode", {} );
+}
+
+
+\$(document).ready(function(){
+
+  \$.getJSON('$sbRoot/home/addShows/getTVDBLanguages', {}, function(data){
+        var resultStr = '';
+
+        if (data.results.length == 0) {
+            resultStr = '<option value="$show.lang" selected="selected">$show.lang</option>';
+        } else {        
+            var current_lang_added = false;
+            \$.each(data.results, function(index, obj){
+                if (obj == "$show.lang") {
+                        selected = ' selected="selected"';
+                        current_lang_added = true;
+                }
+                else
+                        selected = '';
+
+                resultStr += '<option value="' + obj + '"' + selected + '>' + obj + '</option>';
+            });
+            if (!current_lang_added)
+                resultStr += '<option value="$show.lang" selected="selected">$show.lang</option>';
+        }
+        
+        \$('#languageSelect').html(resultStr);
+        
+      
+      	
+        
+        
+  });
+  
+  
+  \$('#changeLanguages').click( function() {
+  	
+  	
+    var epArr = new Array();
+
+    \$('.epCheck').each(function() {      
+    	if (this.checked == true) {
+        	epArr.push(\$(this).attr('id'));
+        }
+    });  
+
+    if (epArr.length == 0)
+    	return false
+
+    url = '$sbRoot/home/setLanguages?show='+\$('#showID').attr('value')+'&eps='+epArr.join('|')+'&lang='+\$('#languageSelect').attr('value')
+    window.location.href = url  
+  });
+  
+  
+
+});
+//-->
+</script>
+
+
+
 <div class="h2footer align-right">
 #if (len($seasonResults) > 14):
     <select id="seasonJump">
@@ -56,6 +124,7 @@
 </div>
 
 <div id="summary" class="align-left">
+<img alt="" class="bannerThumb" src="/showPoster/?show=$show.tvdbid&amp;which=banner" style="float: right;">
 <table class="infoTable" cellspacing="1" border="0" cellpadding="0">
 #if $show.network and $show.airs:
     <tr><td class="showLegend">Airs: </td><td>$show.airs on $show.network</td></tr>
@@ -121,6 +190,15 @@ Change selected episodes to
 
 <div style="clear:both;" class="clearfix"></div>
 
+<div class="float-left">
+Change selected episodes to 
+<select id="languageSelect">
+</select>
+<input type="button" id="changeLanguages" value="Go" /><br />
+<br />
+<br />
+</div>
+
 <table class="sickbeardTable" cellspacing="1" border="0" cellpadding="0">
     
 #for $epResult in $sqlResults:
@@ -132,7 +210,7 @@ Change selected episodes to
         <h2>#if int($epResult["season"]) == 0 then "Specials" else "Season "+str($epResult["season"])#</h2>
     </td>
   </tr>
-  <tr id="season-$epResult["season"]-cols"><th width="1%"><input type="checkbox" class="seasonCheck" id="$epResult["season"]" /></th><th>NFO</th><th>TBN</th><th>Episode</th><th>Name</th><th class="nowrap">Airdate</th><th>Filename</th><th>Status</th><th>Search</th></tr>
+  <tr id="season-$epResult["season"]-cols"><th width="1%"><input type="checkbox" class="seasonCheck" id="$epResult["season"]" /></th><th>NFO</th><th>TBN</th><th>Episode</th><th>Name</th><th class="nowrap">Airdate</th><th>Filename</th><th>Status</th><th>Search</th><th>Lang</th></tr>
         #set $curSeason = int($epResult["season"])
     #end if    
 
@@ -168,6 +246,14 @@ $epLoc
       <a class="epSearch" href="searchEpisode?show=$show.tvdbid&amp;season=$epResult["season"]&amp;episode=$epResult["episode"]"><img src="$sbRoot/images/search32.png" height="16" alt="search" title="Manual Search" /></a>
     #end if
     </td>
+    
+    
+    <td>
+    	$epResult["lang"]
+    </td>
+    
+    
+    
    </tr>
 
 #end for

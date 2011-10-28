@@ -398,3 +398,22 @@ class FixAirByDateSetting(SetNzbTorrentSettings):
                 self.connection.action("UPDATE tv_shows SET air_by_date = ? WHERE tvdb_id = ?", [1, cur_show["tvdb_id"]])
         
         self.incDBVersion()
+        
+        
+"""
+Creates a new column for each tv episode to handle 
+language dependend settings
+@author: element
+"""
+class AddLanguagePerSeries(FixAirByDateSetting):
+    
+    def test(self):
+        return self.hasColumn('tv_episodes', 'lang')
+    
+    def execute(self):        
+        self.addColumn('tv_episodes', 'lang', 'Text', 'en')
+        rows = self.connection.select('SELECT tvdb_id, lang FROM tv_shows')
+        
+        for row in rows:
+            self.connection.action('UPDATE tv_episodes SET lang = ? WHERE showid = ?', [  row['lang'], row['tvdb_id'] ])
+        

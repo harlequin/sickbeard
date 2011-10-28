@@ -944,6 +944,7 @@ class TVEpisode(object):
         self._hastbn = False
         self._status = UNKNOWN
         self._tvdbid = 0
+        self._language = "en"
 
         # setting any of the above sets the dirty flag
         self.dirty = True
@@ -969,6 +970,7 @@ class TVEpisode(object):
     status = property(lambda self: self._status, dirty_setter("_status"))
     tvdbid = property(lambda self: self._tvdbid, dirty_setter("_tvdbid"))
     location = property(lambda self: self._location, dirty_setter("_location"))
+    language = property(lambda self: self._language, dirty_setter("_language"))
 
     def checkForMetaFiles(self):
 
@@ -1057,7 +1059,7 @@ class TVEpisode(object):
                 self.location = os.path.normpath(sqlResults[0]["location"])
 
             self.tvdbid = int(sqlResults[0]["tvdbid"])
-
+            self.language = sqlResults[0]["lang"]
             self.dirty = False
             return True
 
@@ -1264,6 +1266,7 @@ class TVEpisode(object):
         toReturn += "hasnfo: " + str(self.hasnfo) + "\n"
         toReturn += "hastbn: " + str(self.hastbn) + "\n"
         toReturn += "status: " + str(self.status) + "\n"
+        toReturn += "language: " + str(self.language) + "\n"
         return toReturn
 
 
@@ -1333,7 +1336,8 @@ class TVEpisode(object):
                         "hasnfo": self.hasnfo,
                         "hastbn": self.hastbn,
                         "status": self.status,
-                        "location": self.location}
+                        "location": self.location,
+                        "lang": self.language}
         controlValueDict = {"showid": self.show.tvdbid,
                             "season": self.season,
                             "episode": self.episode}

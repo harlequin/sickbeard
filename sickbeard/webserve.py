@@ -1408,6 +1408,11 @@ class NewHomeAddShows:
     @cherrypy.expose
     def sanitizeFileName(self, name):
         return helpers.sanitizeFileName(name)
+    
+    @cherrypy.expose
+    def changeLanguageForEpisode(self, episode_id, lang="en"):
+        print episode_id
+        print lang
 
     @cherrypy.expose
     def searchTVDBForShowName(self, name, lang="en"):
@@ -2287,6 +2292,49 @@ class Home:
         showObj.fixEpisodeNames()
 
         redirect("/home/displayShow?show=" + show)
+
+
+    @cherrypy.expose
+    def setLanguages(self, show=None, eps=None, lang=None, direct=False):
+
+        if show == None or eps == None or lang == None:
+            errMsg = "You must specify a show and at least one episode"
+            if direct:
+                ui.notifications.error('Error', errMsg)
+                return json.dumps({'result': 'error'})
+            else:
+                return _genericMessage("Error", errMsg)
+
+        showObj = sickbeard.helpers.findCertainShow(sickbeard.showList, int(show))
+
+        if showObj == None:
+            errMsg = "Error", "Show not in show list"
+            if direct:
+                ui.notifications.error('Error', errMsg)
+                return json.dumps({'result': 'error'})
+            else:
+                return _genericMessage("Error", errMsg)
+
+        if eps != None:
+
+            for curEp in eps.split('|'):
+
+                logger.log(u"Attempting to set language on episode "+curEp+" to "+lang, logger.DEBUG)
+
+                epInfo = curEp.split('x')
+
+                epObj = showObj.getEpisode(int(epInfo[0]), int(epInfo[1]))
+        
+                myDB = db.DBConnection()
+                myDB.action("UPDATE tv_episodes SET lang = ? WHERE tvdbid = ?", [ lang, epObj.tvdbid ])
+
+
+        if direct:
+            return json.dumps({'result': 'success'})
+        else:
+            redirect("/home/displayShow?show=" + show)
+
+
 
     @cherrypy.expose
     def setStatus(self, show=None, eps=None, status=None, direct=False):

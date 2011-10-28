@@ -29,11 +29,11 @@ import datetime
 
 from name_parser.parser import NameParser, InvalidNameException
 
-resultFilters = ["sub(pack|s|bed)", "nlsub(bed|s)?", "swesub(bed)?",
-                 "(dir|sample|nfo)fix", "sample", "(dvd)?extras", 
-                 "dub(bed)?"]
+resultFilters = ["sub(pack|s|bed)?", "nlsub(bed|s)?", "swesub(bed)?",
+                 "(dir|sample|nfo)fix", "sample", "(dvd)?extras"]
 
-def filterBadReleases(name):
+
+def filterBadReleases(name, language):
     """
     Filters out non-english and just all-around stupid releases by comparing them
     to the resultFilters contents.
@@ -42,7 +42,11 @@ def filterBadReleases(name):
     
     Returns: True if the release name is OK, False if it's bad.
     """
-
+    logger.log(u"-----------------------------------------")
+    logger.log(u"filterBadReleases::Name     :" + name)
+    logger.log(u"filterBadReleases::Language :" + language)
+    logger.log(u"-----------------------------------------")
+    
     try:
         fp = NameParser()
         parse_result = fp.parse(name)
@@ -61,16 +65,70 @@ def filterBadReleases(name):
             check_string = parse_result.release_group 
 
     # if there's no info after the season info then assume it's fine
+    logger.log(u"---> " + check_string)
     if not check_string:
         return True
 
+    g_i_w = ""
+    g_i_w = sickbeard.getLanguageSetting(sickbeard.CFG, "Languages", "general", "ignore_words", "")    
+    if(not g_i_w == None):
+        logger.log(u"==> global ignore:" + g_i_w)
+        for x in resultFilters + g_i_w.split(','):
+            if(not x.strip() == ""):
+                if(ignoreWordFilter(check_string, x) == False):
+                    return False;
+
+
+    l_i_w = ""
+    l_i_w = sickbeard.getLanguageSetting(sickbeard.CFG, "Languages", language, "ignore_words", "")    
+    if(not l_i_w == None):
+        logger.log(u"==> lagnuage ignore:" + l_i_w)
+        for x in resultFilters + l_i_w.split(','):
+            if(not x.strip() == ""):
+                if(ignoreWordFilter(check_string, x) == False):
+                    return False;
+
+    m_w = ""
+    m_w = sickbeard.getLanguageSetting(sickbeard.CFG, "Languages", language, "mandatory", "")    
+    if(not m_w == None):
+        logger.log(u"==> language mandatory:" + m_w)
+        for x in m_w.split(','):
+            if(not x.strip() == ""):
+                if(mandatoryFilter(check_string, x) == False):
+                    return False;
+
+
+
+
     # if any of the bad strings are in the name then say no
-    for x in resultFilters + sickbeard.IGNORE_WORDS.split(','):
-        if re.search('(^|[\W_])'+x+'($|[\W_])', check_string, re.I):
-            logger.log(u"Invalid scene release: "+name+" contains "+x+", ignoring it", logger.DEBUG)
-            return False
+    #for x in resultFilters + sickbeard.IGNORE_WORDS.split(','):
+    #    if re.search('(^|[\W_])'+x+'($|[\W_])', check_string, re.I):
+    #        logger.log(u"Invalid scene release: "+name+" contains "+x+", ignoring it", logger.DEBUG)
+    #        return False
+
+    # if every of the mandatory words are in there, say yes
+    #for x in mandatory:
+    #    if not re.search('(^|[\W_])'+x+'($|[\W_])', check_string, re.I):
+    #        logger.log(u"Mandatory string not found: "+name+" doesnt contains "+x+", ignoring it", logger.DEBUG)
+    #        return False
 
     return True
+
+def ignoreWordFilter(name, word):
+    # if any of the bad strings are in the name then say no    
+    if re.search('(^|[\W_])'+word+'($|[\W_])', name, re.I):
+        logger.log(u"Invalid scene release: "+name+" contains "+word+", ignoring it")
+        return False
+    else:
+        return True    
+
+def mandatoryFilter(name, word):
+    if not re.search('(^|[\W_])'+word+'($|[\W_])', name, re.I):
+        logger.log(u"Mandatory string not found: "+name+" doesnt contains "+word+", ignoring it")
+        return False
+    else:
+        return True    
+
 
 def sceneToNormalShowNames(name):
     """
@@ -206,7 +264,9 @@ def isGoodResult(name, show, log=True):
 
     for curName in set(showNames):
         escaped_name = re.sub('\\\\[\\s.-]', '\W+', re.escape(curName))
-        curRegex = '^' + escaped_name + '\W+(?:(?:S\d[\dE._ -])|(?:\d\d?x)|(?:\d{4}\W\d\d\W\d\d)|(?:(?:part|pt)[\._ -]?(\d|[ivx]))|Season\W+\d+\W+|E\d+\W+)'
+        #curRegex = '^' + escaped_name + '\W+(?:(?:S\d[\dE._ -])|(?:\d\d?x)|(?:\d{4}\W\d\d\W\d\d)|(?:(?:part|pt)[\._ -]?(\d|[ivx]))|Season\W+\d+\W+|E\d+\W+)'
+        # regexfix
+        curRegex = escaped_name + '\W+(?:(?:S\d[\dE._ -])|(?:\d\d?x)|(?:\d{4}\W\d\d\W\d\d)|(?:(?:part|pt)[\._ -]?(\d|[ivx]))|(Season|Staffel)\W+\d+\W+|E\d+\W+)'
         if log:
             logger.log(u"Checking if show "+name+" matches " + curRegex, logger.DEBUG)
 
@@ -215,6 +275,7 @@ def isGoodResult(name, show, log=True):
         if match:
             logger.log(u"Matched "+curRegex+" to "+name, logger.DEBUG)
             return True
+        logger.log(u"##__## Didn't matched "+curRegex+" to "+name, logger.DEBUG)
 
     if log:
         logger.log(u"Provider gave result "+name+" but that doesn't seem like a valid result for "+show.name+" so I'm ignoring it")

@@ -331,6 +331,24 @@ def check_setting_str(config, cfg_name, item_name, def_val, log=True):
     return my_val
 
 
+"""
+Receive the language specific properties
+@author: element
+@param language: language id string like de, en, it 
+"""
+def getLanguageSetting(config, cfg_name, language, item_name, def_val="", log=True):
+    try:
+        my_val = config[cfg_name][language][item_name]
+    except:
+        my_val = def_val
+        try:
+            config[cfg_name][language][item_name] = my_val
+        except:
+            config[cfg_name] = {}
+            config[cfg_name][language] = {}
+            config[cfg_name][language][item_name] = my_val
+
+    return my_val
 def get_backlog_cycle_time():
     cycletime = SEARCH_FREQUENCY*2+7
     return max([cycletime, 720])
@@ -1094,6 +1112,19 @@ def save_config():
     """
     for p in providerPluginList:
         p.Save(new_config)
+    """
+    Implementation of language dependent settings    
+    """
+    new_config['Languages'] = {}
+    
+    new_config['Languages']['general'] = {}
+    new_config['Languages']['general']['ignore_words'] = "french,core2hd,dutch,swedish"
+    
+    new_config['Languages']['en'] = {}
+    new_config['Languages']['en']['mandatory'] = "english"
+
+    new_config['Languages']['de'] = {}
+    new_config['Languages']['de']['mandatory'] = "german"
 
     new_config.write()
 

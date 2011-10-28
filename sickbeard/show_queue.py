@@ -307,6 +307,13 @@ class QueueItemAdd(ShowQueueItem):
             logger.log(u"Launching backlog for this show since its episodes are WANTED")
             sickbeard.backlogSearchScheduler.action.searchBacklog([self.show]) #@UndefinedVariable
 
+        """
+        add the selected language to the episode entry
+        @author: element
+        """
+        myDB = db.DBConnection();
+        myDB.action("UPDATE tv_episodes SET lang = ? WHERE showid = ?", [self.show.lang , self.show.tvdbid])
+
         self.show.flushEpisodes()
 
         self.finish()
