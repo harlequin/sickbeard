@@ -44,7 +44,7 @@ class CacheDBConnection(db.DBConnection):
 
         # Create the table if it's not already there
         try:
-            sql = "CREATE TABLE "+providerName+" (name TEXT, season NUMERIC, episodes TEXT, tvrid NUMERIC, tvdbid NUMERIC, url TEXT, time NUMERIC, quality TEXT);"
+            sql = "CREATE TABLE "+providerName+" (name TEXT, season NUMERIC, episodes TEXT, tvrid NUMERIC, tvdbid NUMERIC, url TEXT, time NUMERIC, quality TEXT, lang TEXT);"
             self.connection.execute(sql)
             self.connection.commit()
         except sqlite3.OperationalError, e:
@@ -201,6 +201,7 @@ class TVCache():
             return False
 
         tvdb_lang = None
+        show_lang = 'en'
 
         # if we need tvdb_id or tvrage_id then search the DB for them
         if not tvdb_id or not tvrage_id:
@@ -272,6 +273,7 @@ class TVCache():
                     if showObj:
                         tvrage_id = showObj.tvrid
                         tvdb_lang = showObj.lang
+                        show_lang = showObj.lang
 
         # if we weren't provided with season/episode information then get it from the name that we parsed
         if not season:
@@ -308,8 +310,8 @@ class TVCache():
         if not quality:
             quality = Quality.nameQuality(name)
 
-        myDB.action("INSERT INTO "+self.providerID+" (name, season, episodes, tvrid, tvdbid, url, time, quality) VALUES (?,?,?,?,?,?,?,?)",
-                    [name, season, episodeText, tvrage_id, tvdb_id, url, curTimestamp, quality])
+        myDB.action("INSERT INTO "+self.providerID+" (name, season, episodes, tvrid, tvdbid, url, time, quality, lang) VALUES (?,?,?,?,?,?,?,?,?)",
+                    [name, season, episodeText, tvrage_id, tvdb_id, url, curTimestamp, quality, show_lang])
 
 
     def searchCache(self, episode, manualSearch=False):

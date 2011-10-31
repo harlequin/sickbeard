@@ -41,6 +41,7 @@ try:
 except ImportError:
     gzip = None
 
+from cache import CacheHandler
 
 # Use local version for sickbeard, system version elsewhere
 try:
@@ -423,8 +424,13 @@ class Tvdb:
         else:
             self.config['cache_location'] = self._getTempDir()
 
+        self.urlopener = urllib2.build_opener() # default opener with no caching
+
         if cache:
             self.config['cache_enabled'] = cache
+            self.urlopener = urllib2.build_opener(
+                CacheHandler(self.config['cache_location'])
+            )
         else:
             self.config['cache_enabled'] = False
 
@@ -498,39 +504,69 @@ class Tvdb:
 
     def _loadUrl(self, url, recache = False):
         global lastTimeout
-        # Do we want caching?
-        if self.config['cache_enabled'] and self.config['cache_location']:
-            h_cache = self.config['cache_location']
-        else:
-            h_cache = False
-
-        if self.config['http_proxy'] != '' and self.config['http_proxy'] != None and socks != None:
-            parsedURI = socks.parseproxyuri(self.config['http_proxy'])
-            h = httplib2.Http(cache=h_cache,proxy_info=httplib2.ProxyInfo(socks.PROXY_TYPE_HTTP, parsedURI[1], int(parsedURI[2])))
-        else:
-            h = httplib2.Http(cache=h_cache)
-
-        # Handle a recache request, this will get fresh content and cache again
-        # if enabled
-        if str(self.config['cache_enabled']).lower() == 'recache' or recache:
-            h_header = {'cache-control':'no-cache'}
-        else:
-            h_header = {}
-
         try:
             log().debug("Retrieving URL %s" % url)
-            header, resp = h.request(url, headers=h_header)
-        except (socket.error, IOError, httplib2.HttpLib2Error), errormsg:
+            resp = self.urlopener.open(url)
+            if 'x-local-cache' in resp.headers:
+                log().debug("URL %s was cached in %s" % (
+                    url,
+                    resp.headers['x-local-cache'])
+                )
+                if recache:
+                    log().debug("Attempting to recache %s" % url)
+                    resp.recache()
+        except (IOError, urllib2.URLError), errormsg:
             if not str(errormsg).startswith('HTTP Error'):
                 lastTimeout = datetime.datetime.now()
-            raise tvdb_error("Could not connect to server %s: %s" % (url, errormsg))
-        except (AttributeError), errormsg:
-            raise tvdb_error("Silly upstream module timed out and didn't give a \
-            good error.  Failed hitting %s, error message: %s" % (url,
-                str(errormsg)))
+            raise tvdb_error("Could not connect to server: %s" % (errormsg))
         #end try
         
-        return str(resp)
+        # handle gzipped content,
+        # http://dbr.lighthouseapp.com/projects/13342/tickets/72-gzipped-data-patch
+        if 'gzip' in resp.headers.get("Content-Encoding", ''):
+            if gzip:
+                stream = StringIO.StringIO(resp.read())
+                gz = gzip.GzipFile(fileobj=stream)
+                return gz.read()
+            
+            raise tvdb_error("Received gzip data from thetvdb.com, but could not correctly handle it")
+        
+        return resp.read()
+    
+        #global lastTimeout
+        ## Do we want caching?
+        #if self.config['cache_enabled'] and self.config['cache_location']:
+        #    h_cache = self.config['cache_location']
+        #else:
+        #    h_cache = False
+
+        #if self.config['http_proxy'] != '' and self.config['http_proxy'] != None and socks != None:
+        #    parsedURI = socks.parseproxyuri(self.config['http_proxy'])
+        #    h = httplib2.Http(cache=h_cache,proxy_info=httplib2.ProxyInfo(socks.PROXY_TYPE_HTTP, parsedURI[1], int(parsedURI[2])))
+        #else:
+        #    h = httplib2.Http(cache=h_cache)
+
+        ## Handle a recache request, this will get fresh content and cache again
+        ## if enabled
+        #if str(self.config['cache_enabled']).lower() == 'recache' or recache:
+        #    h_header = {'cache-control':'no-cache'}
+        #else:
+        #    h_header = {}
+
+        #try:
+        #    log().debug("Retrieving URL %s" % url)
+        #    header, resp = h.request(url, headers=h_header)
+        #except (socket.error, IOError, httplib2.HttpLib2Error), errormsg:
+        #    if not str(errormsg).startswith('HTTP Error'):
+        #        lastTimeout = datetime.datetime.now()
+        #    raise tvdb_error("Could not connect to server %s: %s" % (url, errormsg))
+        #except (AttributeError), errormsg:
+        #    raise tvdb_error("Silly upstream module timed out and didn't give a \
+        #    good error.  Failed hitting %s, error message: %s" % (url,
+        #        str(errormsg)))
+        ##end try
+        
+        #return str(resp)
 
     def _getetsrc(self, url):
         """Loads a URL using caching, returns an ElementTree of the source

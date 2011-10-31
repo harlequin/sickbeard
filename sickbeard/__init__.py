@@ -249,7 +249,7 @@ EXTRA_SCRIPTS = []
 
 GIT_PATH = None
 
-IGNORE_WORDS = "german,french,core2hd,dutch,swedish"
+IGNORE_WORDS = "french,core2hd,dutch,swedish"
 
 __INITIALIZED__ = False
 
@@ -454,7 +454,7 @@ def initialize(consoleLogging=True):
         TVDB_API_PARMS = {'cache': True,
                           'apikey': TVDB_API_KEY,
                           'language': 'en',
-                          'cache_dir': False,
+                          'cache_dir':  os.path.join(CACHE_DIR, 'tvdb'),
                           'http_proxy': proxy_url}
         
         if CACHE_DIR:
