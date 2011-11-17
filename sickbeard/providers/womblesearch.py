@@ -17,7 +17,7 @@ class WombleSearchProvider(generic.NZBProvider):
     def Load (self):
         pass
     
-    def Save(self):
+    def Save(self, cfg):
         pass
     
     
