@@ -157,7 +157,7 @@ def searchForNeededEpisodes():
             logger.log(u"Authentication error: "+ex(e), logger.ERROR)
             continue
         except Exception, e:
-            logger.log(u"Error while searching "+curProvider.name+", skipping: "+ex(e), logger.ERROR)
+            logger.log(u"Error - Type 1 - while searching "+curProvider.name+", skipping: "+ex(e), logger.ERROR)
             logger.log(traceback.format_exc(), logger.DEBUG)
             continue
 
@@ -276,7 +276,7 @@ def findEpisode(episode, manualSearch=False):
             logger.log(u"Authentication error: "+ex(e), logger.ERROR)
             continue
         except Exception, e:
-            logger.log(u"Error while searching "+curProvider.name+", skipping: "+ex(e), logger.ERROR)
+            logger.log(u"Error -Type 2- while searching "+curProvider.name+", skipping: "+ex(e), logger.ERROR)
             logger.log(traceback.format_exc(), logger.DEBUG)
             continue
 
@@ -324,9 +324,9 @@ def findSeason(show, season):
 
             # make a list of all the results for this provider
             for curEp in curResults:
-
+                
                 # skip non-tv crap
-                curResults[curEp] = filter(lambda x:  show_name_helpers.filterBadReleases(x.name, x.language) and show_name_helpers.isGoodResult(x.name, show), curResults[curEp])
+                curResults[curEp] = filter(lambda x:  show_name_helpers.filterBadReleases(x.name, curResults[curEp][0].episodes[0].language) and show_name_helpers.isGoodResult(x.name, show), curResults[curEp])
 
                 if curEp in foundResults:
                     foundResults[curEp] += curResults[curEp]
@@ -337,7 +337,7 @@ def findSeason(show, season):
             logger.log(u"Authentication error: "+ex(e), logger.ERROR)
             continue
         except Exception, e:
-            logger.log(u"Error while searching "+curProvider.name+", skipping: "+ex(e), logger.ERROR)
+            logger.log(u"Error -Type 3- while searching "+curProvider.name+", skipping: "+ex(e), logger.ERROR)
             logger.log(traceback.format_exc(), logger.DEBUG)
             continue
 
