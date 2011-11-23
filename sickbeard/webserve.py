@@ -2466,6 +2466,63 @@ class UI:
 class WebInterface:
 
     @cherrypy.expose
+    def api(self,**kwargs):
+        from lib import simplejson
+        
+        result = []
+        
+        
+        api_key = kwargs.get('key', None)
+        if(api_key == None):
+            pass
+        
+        
+        
+        mode = kwargs.get('mode', None)
+        if(mode == None):
+            return
+        
+        if(mode == 'shows'):
+            for x in sickbeard.showList:
+                result.append(dict(name=x.name, tvdb_id=x.tvdbid, lang=x.lang))
+
+        import common
+        
+        
+        
+        if(mode == 'seasons'):
+            tvdbid = kwargs.get("tvdbid", None)
+            if(tvdbid != None):            
+                myDB = db.DBConnection()                            
+                sqlResults = myDB.select("SELECT DISTINCT season FROM tv_episodes WHERE showid = ? ORDER BY season desc", [tvdbid] )
+                for row in sqlResults:
+                    result.append(dict(season=row["season"], tvdbid=tvdbid))            
+            
+        if(mode == 'show'):
+            tvdbid = kwargs.get("tvdbid", None)
+            season = kwargs.get("season", None)
+            if(tvdbid != None and season != None):            
+                myDB = db.DBConnection()
+                sqlResults = myDB.select("SELECT * FROM tv_episodes WHERE showid = ? AND season = ? ORDER BY season*1000+episode DESC", [tvdbid, season] )
+                for row in sqlResults:
+                    result.append(dict(name=row["name"], season=row["season"], episode=row["episode"], description=row["description"], location=row["location"], status=statusStrings[int(row["status"])]))
+                    
+                
+                
+        
+            #result.append(dict(shows=sickbeard.showList)) 
+        
+        
+        callback_method = kwargs.get('callback', None)
+        if(callback_method == None):
+            return simplejson.dumps(result)
+        else:
+            return callback_method + "(" + simplejson.dumps(result) + ");"
+        
+        
+
+
+    @cherrypy.expose
     def index(self):
 
         redirect("/home")
